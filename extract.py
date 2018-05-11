@@ -145,12 +145,18 @@ def parse_row( r ):
         style = style[0:-1]
 
     if style == "100%":
-        return ( None, None, None )
+        return ( None, None )
 
-    return ( style, model, desc )
+
+    return ( "%s-%s" % (style, model)[0:11], desc )
 
 def walk_map( map, row ):
-    (s,m,d) = parse_row( row )
+    des = row[0]
+    add_armstyles = False
+    if ('2A' in des or '3A' in des) and '_' in des:
+        add_armstyles = True
+
+    (s,d) = parse_row( row )
     prv_grade = 0
     prv_price = 0
     grade = 0
@@ -158,7 +164,7 @@ def walk_map( map, row ):
     sgrade = ""
     for g in map['grades']:
         if row[g]:
-            if s and m and d:
+            if s and d:
                 sgrade = map['hdr1'][g]
                 sprice = row[g]
                 prv_price = price
@@ -166,23 +172,38 @@ def walk_map( map, row ):
                 if token_has_digits( sgrade ):
                     grade = int( sgrade )
                     price = int( row[g] )
-                out( "%s," % s )
-                out( "%s," % m )
-                out( "%s," % d )
-                out( "%s," % sgrade )
-                out( "%s\n" % sprice  )
+                if not add_armstyles:
+                    out( "%s," % s[0:11] )
+                    out( "%s," % d[0:19] )
+                    out( "%s," % sgrade )
+                    out( "%s\n" % sprice  )
+                else:
+                    xx = s.split( '-' )
+                    for ix in range( 1, 5 ):
+                        out( "%s%d-%s," % (xx[0],ix,xx[1]) )
+                        out( "%s," % d[0:19] )
+                        out( "%s," % sgrade )
+                        out( "%s\n" % sprice  )
 
     delta = grade - prv_grade
     bump = price - prv_price
     new = price
     if not map['leather'] and sgrade != "MML" and delta != 0:
         for x in range( grade+delta, 149, delta ):
-            out( "%s," % s )
-            out( "%s," % m )
-            out( "%s," % d )
-            new += bump
-            out( "%s," % x )
-            out( "%s\n" % new  )
+            if not add_armstyles:
+                out( "%s," % s[0:11] )
+                out( "%s," % d[0:19] )
+                new += bump
+                out( "%s," % x )
+                out( "%s\n" % new  )
+            else:
+                xx = s.split( '-' )
+                for ix in range( 1, 5 ):
+                 out( "%s%d-%s," % (xx[0],ix,xx[1]) )
+                 out( "%s," % d[0:19] )
+                 new += bump
+                 out( "%s," % x )
+                 out( "%s\n" % new  )
 
 price_tags = [
 	"MSRP",
